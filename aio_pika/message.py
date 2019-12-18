@@ -524,6 +524,15 @@ class IncomingMessage(Message):
             ignore_processed=ignore_processed,
         )
 
+    def _mark_as_processed(self, task):
+        try:
+            exception = task.exception()
+        except asyncio.CancelledError:
+            pass
+        else:
+            if exception is None:
+                self.__processed = True
+
     def ack(self, multiple: bool = False) -> asyncio.Task:
         """ Send basic.ack is used for positive acknowledgements
 
@@ -549,7 +558,7 @@ class IncomingMessage(Message):
                 delivery_tag=self.delivery_tag, multiple=multiple
             )
         )
-        self.__processed = True
+        task.add_done_callback(self._mark_as_processed)
 
         if not self.locked:
             self.lock()
@@ -576,7 +585,8 @@ class IncomingMessage(Message):
         task = asyncio.ensure_future(self.__channel.basic_reject(
             delivery_tag=self.delivery_tag, requeue=requeue
         ))
-        self.__processed = True
+        task.add_done_callback(self._mark_as_processed)
+
         if not self.locked:
             self.lock()
 
@@ -599,8 +609,7 @@ class IncomingMessage(Message):
             multiple=multiple,
             requeue=requeue
         ))
-
-        self.__processed = True
+        task.add_done_callback(self._mark_as_processed)
 
         if not self.locked:
             self.lock()

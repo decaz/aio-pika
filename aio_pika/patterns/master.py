@@ -139,9 +139,9 @@ class Master(Base):
             try:
                 await self.execute(func, data)
             except RejectMessage as e:
-                message.reject(requeue=e.requeue)
+                await message.reject(requeue=e.requeue)
             except NackMessage as e:
-                message.nack(requeue=e.requeue)
+                await message.nack(requeue=e.requeue)
 
     async def create_queue(self, channel_name, **kwargs) -> Queue:
         return await self.channel.declare_queue(channel_name, **kwargs)

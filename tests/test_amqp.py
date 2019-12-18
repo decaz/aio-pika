@@ -618,7 +618,8 @@ class TestCase(BaseTestCase):
         )
 
         incoming_message = await queue.get(timeout=5)
-        incoming_message.ack()
+        ack_task = incoming_message.ack()
+        await ack_task
 
         with pytest.raises(MessageProcessError):
             incoming_message.ack()
@@ -651,7 +652,8 @@ class TestCase(BaseTestCase):
         )
 
         incoming_message = await queue.get(timeout=5)
-        incoming_message.reject(requeue=False)
+        reject_task = incoming_message.reject(requeue=False)
+        await reject_task
 
         with pytest.raises(MessageProcessError):
             incoming_message.reject(requeue=False)
